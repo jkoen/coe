@@ -1,0 +1,148 @@
+{% extends 'admin/base_site.html' %}
+{% load static %}
+
+{% block branding %}
+<h1>COE Offering Request Form</h1>
+{% endblock %}
+
+{% block content %}
+<style type="text/css">
+/* Hide all fields by default */
+form.request table tr {
+    display: none;
+}
+</style>
+
+<form id="q1_form" method="post" action="{% url 'offering_request:offering_request' %}" class="request">
+    {% csrf_token %}
+    <table>
+        {{ form.as_table }}
+    </table>
+    <input type="submit" value="Submit" />
+</form>
+
+<script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
+<script type="text/javascript">
+function hideField(name) {
+    $('form.request :input[name=' + name + ']').parents('tr').hide();
+
+    // Clear
+}
+
+(function() {
+    $('form > input').keyup(function() {
+
+        var empty = false;
+        $('form > input').each(function() {
+            if ($(this).val() == '') {
+                empty = true;
+            }
+        });
+
+        if (empty) {
+            $('#register').attr('disabled', 'disabled'); // updated according to http://stackoverflow.com/questions/7637790/how-to-remove-disabled-attribute-with-jquery-ie
+        } else {
+            $('#register').removeAttr('disabled'); // updated according to http://stackoverflow.com/questions/7637790/how-to-remove-disabled-attribute-with-jquery-ie
+        }
+    });
+})()
+
+function showField(name) {
+    $('form.request :input[name=' + name + ']').parents('tr').show();
+}
+
+function processPlatform() {
+    platform_pk = $('form.request :input[name=platform]').val();
+    offerings_options = $('form.request :input[name=offering] option');
+
+    if (platform_pk === '') {
+        // Platform was un-selected, hide all fields
+        $('form.request :input:not([name=platform])').each(function() {
+            $(this).parents('tr').hide();
+        });
+
+        // And clear the offering field because the current selection might not
+        // be compatible
+        $('form.request :input[name=offering]').val('');
+        return
+    }
+
+    // Request the platform form configuration, hack the offerings field and
+    // display it
+    $.get(
+        '{% url 'offering_request:platform_configuration' 0 %}'.replace('0', platform_pk),
+        function(data, textStatus, jqXHR) {
+            $('form.request :input[name=offering] option').remove();
+	    
+                $('form.request :input[name=offering]').append(
+                    '<option value=""></option>'
+                );
+            for (var i=0; i<data.offerings.length; i++) {
+                $('form.request :input[name=offering]').append(
+                    '<option value="'+data.offerings[i][0]+'">'+data.offerings[i][1]+'</option>'
+                );
+            }
+
+            showField('offering');
+        },
+        'json'
+    );
+}
+
+function processOffering() {
+    platform_pk = $('form.request :input[name=platform]').val();
+    offering_pk = $('form.request :input[name=offering]').val();
+    fields = $('form.request :input:not([name=platform]):not([name=offering])');
+
+    if (platform_pk === '' && offering_pk === '') {
+        // Offering was un-selected, hide all fields
+        fields.each(function() {
+            $(this).parents('tr').hide();
+        });
+        return
+    }
+
+    // Request the platform offering form configuration, show fields which are
+    // not hidden and hide those which should be hidden
+    $.get(
+        '{% url 'offering_request:platformoffering_configuration' 'platform_pk' 'offering_pk' %}'.replace(
+            'platform_pk', platform_pk
+        ).replace(
+            'offering_pk', offering_pk
+        ),
+        function(data, textStatus, jqXHR) {
+            fields.each(function() {
+                let name = $(this).attr('name');
+                if (data.hide_fields.indexOf(name) < 0) {
+                    showField(name);
+                } else {
+                    hideField(name);
+                }
+            });
+        },
+        'json'
+    );
+}
+
+$(document).ready(function() {
+    // first, show the platform field
+    showField('platform');
+
+    // take care of the offerings field
+    processPlatform();
+
+    // call processPlatform on platform change too
+    $('body').on('change', ':input[name=platform]', processPlatform);
+
+    // Update fields when we change the platform too
+    $('body').on('change', ':input[name=platform]', processOffering);
+
+    // take care of the fields for this platform offering
+    processOffering();
+
+    // call processPlatform on platform change too
+    $('body').on('change', ':input[name=offering]', processOffering);
+
+});
+</script>
+{% endblock %}
