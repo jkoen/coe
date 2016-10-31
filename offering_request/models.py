@@ -11,12 +11,12 @@ from .choices import Services_required
 
 class Offering_request(models.Model):
     platform = models.ForeignKey('Platform')
-    offering = models.ForeignKey('Offering')
+    offering = models.ForeignKey('Offering', blank=True)
     insight_quote = models.IntegerField(default=0000)
     customer_name = models.CharField(max_length=120, default='Not Applicable')
     country = models.CharField(max_length=14, choices=Countries)
     deal_value = models.IntegerField(default=0000)
-    request_date = models.DateField() ### Need to add default=date.today
+    request_date = models.DateField(default=date.today, blank=True) ### Need to add default=date.today
     requester_name = models.CharField(max_length=35)
     requester_email = models.EmailField()
     requester_mobile_number = models.CharField(max_length=14)
@@ -24,11 +24,11 @@ class Offering_request(models.Model):
     approval_manager_email = models.EmailField()
     presales_name = models.CharField(max_length=35)
     presales_email = models.EmailField()
-    solution_support = models.CharField(max_length=3, choices=Services_required)
+    solution_support = models.CharField(max_length=3, choices=Services_required, blank=True)
     start_date = models.DateField()
     end_date = models.DateField()
     location = models.CharField(max_length=13, choices=Location)
-    solution_design = models.FileField(upload_to='solution_design/%Y-%m-%d')
+    solution_design = models.FileField(upload_to='solution_design/%Y-%m-%d', blank=True)
     testplan = models.FileField(upload_to='testplan/%Y-%m-%d', blank=True, null=True)
     request_description = models.TextField()
     audience_description = models.TextField()

@@ -1,5 +1,6 @@
 {% extends 'admin/base_site.html' %}
-{% load static %}
+{% load static i18n admin_urls admin_static admin_modify %}
+{% load debug %}
 
 {% block branding %}
 <h1>COE Offering Request Form</h1>
@@ -13,12 +14,12 @@ form.request table tr {
 }
 </style>
 
-<form id="q1_form" method="post" action="{% url 'offering_request:offering_request' %}" class="request">
+<form method="post" action="{% url 'offering_request:offering_request' %}" class="request" >
     {% csrf_token %}
     <table>
         {{ form.as_table }}
     </table>
-    <input type="submit" value="Submit" />
+         <input class='btn btn-primary' type='submit' value='Submit' disabled=disabled >
 </form>
 
 <script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
@@ -28,24 +29,6 @@ function hideField(name) {
 
     // Clear
 }
-
-(function() {
-    $('form > input').keyup(function() {
-
-        var empty = false;
-        $('form > input').each(function() {
-            if ($(this).val() == '') {
-                empty = true;
-            }
-        });
-
-        if (empty) {
-            $('#register').attr('disabled', 'disabled'); // updated according to http://stackoverflow.com/questions/7637790/how-to-remove-disabled-attribute-with-jquery-ie
-        } else {
-            $('#register').removeAttr('disabled'); // updated according to http://stackoverflow.com/questions/7637790/how-to-remove-disabled-attribute-with-jquery-ie
-        }
-    });
-})()
 
 function showField(name) {
     $('form.request :input[name=' + name + ']').parents('tr').show();
@@ -92,15 +75,22 @@ function processPlatform() {
 function processOffering() {
     platform_pk = $('form.request :input[name=platform]').val();
     offering_pk = $('form.request :input[name=offering]').val();
-    fields = $('form.request :input:not([name=platform]):not([name=offering])');
-
+    fields = $('form.request :input:not([name=platform]):not([name=offering]):not([type=hidden])');
+    
     if (platform_pk === '' && offering_pk === '') {
         // Offering was un-selected, hide all fields
         fields.each(function() {
             $(this).parents('tr').hide();
         });
-        return
+       return 
+       }
+
+    if (offering_pk === '') { 
+
+        // Disable the submit field because offering was unselected
+        $('form.request input[type=submit]').attr('disabled', 'disabled');
     }
+
 
     // Request the platform offering form configuration, show fields which are
     // not hidden and hide those which should be hidden
@@ -119,6 +109,10 @@ function processOffering() {
                     hideField(name);
                 }
             });
+            if (platform === 'UCP for Microsoft Private Cloud' && offering_pk === 'Event Support') {
+                
+            // Offering selection is ok, enable the submited field
+            $('form.request input[type=submit]').attr('disabled', false);
         },
         'json'
     );

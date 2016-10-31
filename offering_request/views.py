@@ -15,7 +15,7 @@ def offering_request(request):
         if form.is_valid():
             instance = form.save(commit=False)
             instance.save()
-            return http.HttpResponseRedirect('/prod/coe/thanks/')
+            return http.HttpResponseRedirect('/coe/thanks/')
     else:
         form = Offering_requestForm()
 
@@ -39,7 +39,6 @@ class PlatformConfiguration(detail.BaseDetailView):
             'offerings': list(platform.offerings.values_list('pk', 'name'))
         })
 
-
 class PlatformOfferingConfiguration(detail.BaseDetailView):
     model = PlatformOffering
 
@@ -58,12 +57,13 @@ class PlatformOfferingConfiguration(detail.BaseDetailView):
         })
 
 def thanks(request):
-    form_class = Offering_requestForm
+    #instance = RequestOfferinc.objects.get(pk=request.GET['pk'])
+    #form_class = Offering_requestForm
 
-    if request.method == 'POST':
-        form = form_class(request.POST or None)
+    #if request.method == 'POST':
+    #    form = form_class(request.POST or None)
 
-    context = dict(form=form)
+    context = dict()
 
     return shortcuts.render(
         request,
